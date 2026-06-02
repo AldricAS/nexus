@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>NEXUS — Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/nexus/shared.css">
+</head>
+<body>
+<div class="bg-layer"><div class="grid-lines"></div><div class="nebula-1"></div><div class="nebula-2"></div><div class="nebula-3"></div></div>
+
+<div class="dash-wrapper">
+  <header class="dash-header">
+    <div class="dash-brand">
+      <div class="logo-hex">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L4 7v10l8 5 8-5V7l-8-5z"/><path d="M12 22V12M4 7l8 5 8-5"/></svg>
+      </div>
+      <div class="name">NEXUS</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:1rem">
+      <div class="user-chip"><span class="dot"></span><span id="userEmail">—</span></div>
+      <button class="logout-btn" id="logoutBtn">Logout</button>
+    </div>
+  </header>
+
+  <div class="dash-card">
+    <div class="card-glare"></div>
+    <h2>Generate Embed Link</h2>
+    <p class="subtitle">Masukin URL website tujuan. Visitor harus login NEXUS dulu sebelum di-redirect ke URL itu.</p>
+
+    <div id="alert" class="alert error"></div>
+
+    <form id="genForm">
+      <div class="field-group">
+        <label class="field-label">URL Tujuan</label>
+        <div class="field-wrap">
+          <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          <input type="url" class="input-field" id="targetUrl" placeholder="https://websitekamu.com/halaman" required/>
+        </div>
+      </div>
+      <button type="submit" class="btn-primary">Generate Gate Link</button>
+    </form>
+
+    <div class="result-box" id="resultBox">
+      <label>✦ Gate Link Kamu</label>
+      <div class="result-row">
+        <input type="text" id="resultUrl" readonly/>
+        <button class="copy-btn" data-copy="resultUrl">Copy</button>
+      </div>
+      <label style="margin-top:1rem">✦ Snippet HTML (taro di website kamu)</label>
+      <div class="snippet" id="snippet"></div>
+      <button class="copy-btn" id="copySnippet" style="margin-top:.6rem">Copy Snippet</button>
+    </div>
+  </div>
+
+  <div class="dash-card">
+    <h2>Riwayat Gate Link</h2>
+    <p class="subtitle">Semua link yang pernah kamu generate (max 50).</p>
+    <div id="historyList"></div>
+  </div>
+
+  <div class="footer-section">
+    <div class="footer-brand">POWERED BY <span class="highlight">NEXUS</span></div>
+    <div class="security-badge"><span class="security-dot"></span>Session Active</div>
+  </div>
+</div>
+
+<script src="/nexus/auth.js"></script>
+<script>
+  const sess = NEXUS.requireAuth('/login.html');
+  if(!sess) throw 0;
+  document.getElementById('userEmail').textContent = sess.email;
+  document.getElementById('logoutBtn').onclick = ()=>{ NEXUS.logout(); location.href='/login.html'; };
+
+  const form = document.getElementById('genForm');
+  const resultBox = document.getElementById('resultBox');
+  const resultUrl = document.getElementById('resultUrl');
+  const snippet = document.getElementById('snippet');
+  const alertBox = document.getElementById('alert');
+  const historyList = document.getElementById('historyList');
+
+  function renderHistory(){
+    const links = NEXUS.getLinks();
+    if(!links.length){ historyList.innerHTML = '<div class="history-empty">Belum ada gate link. Generate yang pertama di atas ✦</div>'; return; }
+    historyList.innerHTML = links.map(l=>{
+      const gate = NEXUS.buildGateUrl(l.url);
+      return `<div class="history-item">
+        <div class="url">→ ${escapeHtml(l.url)}<br><span style="color:var(--purple-glow);font-size:.7rem">${escapeHtml(gate)}</span></div>
+        <div class="actions">
+          <button onclick="copyText('${escapeAttr(gate)}', this)">Copy</button>
+          <button class="del" onclick="delLink('${l.id}')">Hapus</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+  function escapeAttr(s){return s.replace(/'/g,"\\'")}
+  window.delLink = id=>{ if(confirm('Hapus link ini?')){ NEXUS.deleteLink(id); renderHistory(); } };
+  window.copyText = (text, btn)=>{
+    navigator.clipboard.writeText(text).then(()=>{
+      const old = btn.textContent; btn.textContent='✓ Copied'; setTimeout(()=>btn.textContent=old,1400);
+    });
+  };
+
+  form.addEventListener('submit', e=>{
+    e.preventDefault();
+    alertBox.classList.remove('show');
+    const url = document.getElementById('targetUrl').value.trim();
+    try{ new URL(url); }catch(_){ alertBox.textContent='URL tidak valid'; alertBox.classList.add('show'); return; }
+    NEXUS.addLink(url);
+    const gate = NEXUS.buildGateUrl(url);
+    resultUrl.value = gate;
+    snippet.textContent = `<a href="${gate}" target="_blank" rel="noopener">\n  Masuk untuk melanjutkan →\n</a>`;
+    resultBox.classList.add('show');
+    renderHistory();
+    form.reset();
+  });
+
+  document.querySelectorAll('.copy-btn[data-copy]').forEach(b=>{
+    b.onclick = ()=> copyText(document.getElementById(b.dataset.copy).value, b);
+  });
+  document.getElementById('copySnippet').onclick = (e)=> copyText(snippet.textContent, e.target);
+
+  renderHistory();
+</script>
+</body>
+</html>

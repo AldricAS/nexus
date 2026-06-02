@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>NEXUS — Daftar</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/nexus/shared.css">
+</head>
+<body>
+<div class="bg-layer"><div class="grid-lines"></div><div class="nebula-1"></div><div class="nebula-2"></div><div class="nebula-3"></div></div>
+
+<div class="main-wrapper">
+  <div class="logo-section">
+    <div class="logo-icon">
+      <div class="logo-ring"></div>
+      <div class="logo-hex">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2L4 7v10l8 5 8-5V7l-8-5z"/><path d="M12 22V12M4 7l8 5 8-5"/></svg>
+      </div>
+    </div>
+    <div class="brand-name">NEXUS</div>
+    <div class="brand-tagline">Create Your Account</div>
+  </div>
+
+  <div class="auth-card">
+    <div class="card-glare"></div>
+    <span class="card-corner tl"></span><span class="card-corner tr"></span>
+    <span class="card-corner bl"></span><span class="card-corner br"></span>
+
+    <div class="card-title">Daftar</div>
+    <div class="card-sub">Buat akun untuk mulai generate gate link</div>
+
+    <div id="alert" class="alert error"></div>
+
+    <form id="regForm">
+      <div class="field-group">
+        <label class="field-label">Email</label>
+        <div class="field-wrap">
+          <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <input type="email" class="input-field" id="email" placeholder="kamu@nexus.id" required/>
+        </div>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Password (min 6)</label>
+        <div class="field-wrap">
+          <svg class="field-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <input type="password" class="input-field" id="password" placeholder="••••••••" required minlength="6"/>
+        </div>
+      </div>
+      <button type="submit" class="btn-primary">Buat Akun</button>
+    </form>
+
+    <div class="switch-link">Sudah punya akun? <a href="/login.html">Masuk</a></div>
+  </div>
+
+  <div class="footer-section">
+    <div class="footer-brand">POWERED BY <span class="highlight">NEXUS</span></div>
+    <div class="security-badge"><span class="security-dot"></span>Local Encrypted</div>
+  </div>
+</div>
+
+<script src="/nexus/auth.js"></script>
+<script>
+  const to = new URL(location.href).searchParams.get('to');
+  const alertBox = document.getElementById('alert');
+  document.getElementById('regForm').addEventListener('submit', e=>{
+    e.preventDefault();
+    try{
+      NEXUS.register({email: email.value, password: password.value});
+      window.location.replace(to ? '/go?to='+encodeURIComponent(to) : '/dashboard.html');
+    }catch(err){ alertBox.textContent = err.message; alertBox.classList.add('show'); }
+  });
+  if(to) document.querySelector('.switch-link a').href = '/login.html?to='+encodeURIComponent(to);
+</script>
+</body>
+</html>
