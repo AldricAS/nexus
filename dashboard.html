@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEXUS Dashboard — Link Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --purple-deep: #0d0a1a;
+            --purple-dark: #130d2a;
+            --purple-mid: #1e1040;
+            --purple-core: #7c3aed;
+            --purple-bright: #a855f7;
+            --purple-glow: #c084fc;
+            --purple-neon: #e879f9;
+            --accent-cyan: #22d3ee;
+            --accent-pink: #f472b6;
+            --accent-green: #34d399;
+            --text-primary: #f0e6ff;
+            --text-muted: #9575cd;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--purple-deep);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* BG */
+        .bg-layer { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+        .nebula { position: absolute; border-radius: 50%; }
+        .nebula-1 { width: 700px; height: 700px; background: radial-gradient(circle, rgba(124,58,237,0.12) 0%, transparent 70%); top: -200px; left: -200px; animation: f1 20s ease-in-out infinite alternate; }
+        .nebula-2 { width: 500px; height: 500px; background: radial-gradient(circle, rgba(168,85,247,0.08) 0%, transparent 70%); bottom: -100px; right: -100px; animation: f2 25s ease-in-out infinite alternate; }
+        .grid-lines {
+            position: absolute; inset: 0;
+            background-image: linear-gradient(rgba(124,58,237,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(124,58,237,0.04) 1px, transparent 1px);
+            background-size: 60px 60px;
+            animation: grid-drift 30s linear infinite;
+        }
+        @keyframes f1 { from { transform: translate(0,0); } to { transform: translate(50px,30px); } }
+        @keyframes f2 { from { transform: translate(0,0); } to { transform: translate(-40px,-30px); } }
+        @keyframes grid-drift { from { background-position: 0 0; } to { background-position: 60px 60px; } }
+
+        /* LAYOUT */
+        .app { position: relative; z-index: 10; min-height: 100vh; display: flex; flex-direction: column; }
+
+        /* NAVBAR */
+        .navbar {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 1rem 2rem;
+            background: rgba(13,10,26,0.8);
+            border-bottom: 1px solid rgba(124,58,237,0.2);
+            backdrop-filter: blur(12px);
+            position: sticky; top: 0; z-index: 100;
+        }
+        .nav-brand {
+            display: flex; align-items: center; gap: 12px;
+        }
+        .nav-hex {
+            width: 36px; height: 36px;
+            background: linear-gradient(135deg, var(--purple-core), var(--purple-neon));
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 0 20px rgba(168,85,247,0.4);
+        }
+        .nav-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem; font-weight: 900;
+            letter-spacing: 0.2em;
+            background: linear-gradient(135deg, #a855f7, #e879f9);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .nav-right { display: flex; align-items: center; gap: 1rem; }
+        .nav-user {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 0.75rem; color: var(--text-muted);
+            font-family: 'Orbitron', sans-serif; letter-spacing: 0.1em;
+        }
+        .user-avatar {
+            width: 32px; height: 32px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--purple-core), var(--purple-neon));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.7rem; font-weight: 700; color: white;
+            font-family: 'Orbitron', sans-serif;
+        }
+        .btn-logout {
+            padding: 0.4rem 1rem;
+            border: 1px solid rgba(124,58,237,0.3);
+            border-radius: 6px;
+            background: rgba(124,58,237,0.1);
+            color: var(--text-muted);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.5rem; letter-spacing: 0.15em; text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-logout:hover { border-color: rgba(232,121,249,0.5); color: var(--purple-neon); background: rgba(232,121,249,0.1); }
+
+        /* MAIN */
+        .main-content { flex: 1; padding: 2rem; max-width: 900px; margin: 0 auto; width: 100%; }
+
+        /* HEADER SECTION */
+        .page-header { margin-bottom: 2rem; animation: slide-up 0.6s ease both; }
+        .page-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.6rem; font-weight: 900;
+            letter-spacing: 0.1em;
+            background: linear-gradient(135deg, #f0e6ff, #a855f7);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+            margin-bottom: 0.4rem;
+        }
+        .page-sub { font-size: 0.8rem; color: var(--text-muted); }
+
+        /* STATS ROW */
+        .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 2rem; animation: slide-up 0.7s 0.1s ease both; }
+        .stat-card {
+            background: rgba(19,13,42,0.8);
+            border: 1px solid rgba(124,58,237,0.2);
+            border-radius: 12px;
+            padding: 1.2rem;
+            position: relative; overflow: hidden;
+        }
+        .stat-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--purple-bright), transparent);
+        }
+        .stat-label { font-family: 'Orbitron', sans-serif; font-size: 0.5rem; letter-spacing: 0.2em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; }
+        .stat-value { font-family: 'Orbitron', sans-serif; font-size: 1.5rem; font-weight: 900; color: var(--purple-bright); }
+        .stat-change { font-size: 0.65rem; color: var(--accent-green); margin-top: 0.2rem; }
+
+        /* GENERATOR CARD */
+        .generator-card {
+            background: rgba(19,13,42,0.9);
+            border: 1px solid rgba(124,58,237,0.25);
+            border-radius: 16px;
+            padding: 2rem;
+            position: relative; overflow: hidden;
+            margin-bottom: 2rem;
+            animation: slide-up 0.7s 0.2s ease both;
+        }
+        .generator-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(168,85,247,0.7), rgba(232,121,249,0.5), transparent);
+        }
+        .corner { position: absolute; width: 16px; height: 16px; border-color: var(--purple-core); border-style: solid; }
+        .corner.tl { top: 10px; left: 10px; border-width: 2px 0 0 2px; }
+        .corner.tr { top: 10px; right: 10px; border-width: 2px 2px 0 0; }
+        .corner.bl { bottom: 10px; left: 10px; border-width: 0 0 2px 2px; }
+        .corner.br { bottom: 10px; right: 10px; border-width: 0 2px 2px 0; }
+
+        .section-title {
+            font-family: 'Orbitron', sans-serif; font-size: 0.7rem;
+            font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;
+            color: var(--purple-glow); margin-bottom: 1.5rem;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .section-title::before {
+            content: ''; width: 4px; height: 14px;
+            background: linear-gradient(var(--purple-core), var(--purple-neon));
+            border-radius: 2px; display: block;
+        }
+
+        .field-label {
+            font-family: 'Orbitron', sans-serif; font-size: 0.5rem;
+            letter-spacing: 0.2em; color: var(--purple-glow); text-transform: uppercase;
+            display: block; margin-bottom: 0.5rem;
+        }
+
+        .input-row { display: flex; gap: 1rem; margin-bottom: 1.5rem; }
+        .input-wrap { flex: 1; position: relative; }
+        .input-field {
+            width: 100%;
+            background: rgba(13,10,26,0.8);
+            border: 1px solid rgba(124,58,237,0.3);
+            border-radius: 10px;
+            padding: 0.85rem 1rem 0.85rem 2.75rem;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.875rem; color: var(--text-primary);
+            outline: none; transition: all 0.3s;
+        }
+        .input-field::placeholder { color: rgba(149,117,205,0.4); }
+        .input-field:focus {
+            border-color: var(--purple-bright);
+            box-shadow: 0 0 0 3px rgba(124,58,237,0.15), 0 0 20px rgba(124,58,237,0.08);
+        }
+        .input-icon {
+            position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+            color: var(--purple-core); transition: color 0.3s;
+            pointer-events: none;
+        }
+        .input-wrap:focus-within .input-icon { color: var(--purple-glow); }
+
+        .btn-generate {
+            padding: 0.85rem 2rem;
+            border: none; border-radius: 10px;
+            background: linear-gradient(135deg, #7c3aed, #a855f7, #c084fc);
+            color: white;
+            font-family: 'Orbitron', sans-serif; font-size: 0.65rem;
+            font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase;
+            cursor: pointer; white-space: nowrap;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 20px rgba(124,58,237,0.4);
+            display: flex; align-items: center; gap: 8px;
+        }
+        .btn-generate:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(124,58,237,0.5); }
+        .btn-generate:active { transform: translateY(0); }
+
+        /* RESULT AREA */
+        .result-area {
+            display: none;
+            background: rgba(13,10,26,0.6);
+            border: 1px solid rgba(124,58,237,0.2);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            animation: fade-in 0.4s ease;
+        }
+        .result-area.show { display: block; }
+
+        .result-label {
+            font-family: 'Orbitron', sans-serif; font-size: 0.5rem;
+            letter-spacing: 0.2em; color: var(--text-muted); text-transform: uppercase;
+            margin-bottom: 0.75rem;
+        }
+        .result-link-box {
+            display: flex; align-items: center; gap: 0.75rem;
+            background: rgba(7,5,15,0.8);
+            border: 1px solid rgba(124,58,237,0.2);
+            border-radius: 8px; padding: 0.75rem 1rem;
+            margin-bottom: 1rem;
+        }
+        .result-link-text {
+            flex: 1; font-size: 0.8rem; color: var(--purple-bright);
+            font-family: 'Space Grotesk', monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .btn-copy {
+            padding: 0.4rem 0.9rem;
+            border: 1px solid rgba(124,58,237,0.35);
+            border-radius: 6px; background: rgba(124,58,237,0.15);
+            color: var(--purple-glow);
+            font-family: 'Orbitron', sans-serif; font-size: 0.5rem;
+            letter-spacing: 0.1em; text-transform: uppercase;
+            cursor: pointer; white-space: nowrap; transition: all 0.2s;
+            display: flex; align-items: center; gap: 5px;
+        }
+        .btn-copy:hover { background: rgba(124,58,237,0.3); border-color: var(--purple-bright); }
+        .btn-copy.copied { background: rgba(52,211,153,0.15); border-color: var(--accent-green); color: var(--accent-green); }
+
+        .embed-snippet {
+            background: rgba(7,5,15,0.8);
+            border: 1px solid rgba(124,58,237,0.15);
+            border-radius: 8px; padding: 1rem;
+            font-family: monospace; font-size: 0.72rem;
+            color: #c084fc; line-height: 1.6;
+            white-space: pre-wrap; word-break: break-all;
+            margin-bottom: 0.75rem;
+        }
+        .result-hint {
+            font-size: 0.7rem; color: var(--text-muted);
+            display: flex; align-items: flex-start; gap: 6px; line-height: 1.5;
+        }
+
+        /* LINK HISTORY */
+        .history-card {
+            background: rgba(19,13,42,0.9);
+            border: 1px solid rgba(124,58,237,0.2);
+            border-radius: 16px;
+            padding: 2rem;
+            animation: slide-up 0.7s 0.3s ease both;
+        }
+        .history-empty {
+            text-align: center; padding: 2rem;
+            color: var(--text-muted); font-size: 0.75rem;
+        }
+        .history-item {
+            display: flex; align-items: center; gap: 1rem;
+            padding: 0.9rem 1rem;
+            border: 1px solid rgba(124,58,237,0.12);
+            border-radius: 10px; margin-bottom: 0.75rem;
+            background: rgba(13,10,26,0.5);
+            transition: border-color 0.2s, background 0.2s;
+            cursor: pointer;
+        }
+        .history-item:hover { border-color: rgba(168,85,247,0.35); background: rgba(124,58,237,0.06); }
+        .history-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: var(--purple-bright);
+            box-shadow: 0 0 8px var(--purple-bright);
+            flex-shrink: 0;
+        }
+        .history-url { flex: 1; font-size: 0.8rem; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .history-url span { font-size: 0.65rem; color: var(--text-muted); display: block; margin-top: 2px; }
+        .history-actions { display: flex; gap: 0.5rem; }
+        .btn-hist {
+            padding: 0.35rem 0.75rem;
+            border: 1px solid rgba(124,58,237,0.2);
+            border-radius: 6px; background: transparent;
+            color: var(--text-muted); font-size: 0.6rem;
+            cursor: pointer; transition: all 0.2s;
+            font-family: 'Orbitron', sans-serif; letter-spacing: 0.1em;
+        }
+        .btn-hist:hover { border-color: rgba(168,85,247,0.4); color: var(--purple-bright); }
+        .btn-hist.del:hover { border-color: rgba(244,114,182,0.4); color: var(--accent-pink); }
+
+        /* FOOTER */
+        .footer {
+            padding: 1.5rem 2rem;
+            border-top: 1px solid rgba(124,58,237,0.1);
+            text-align: center;
+        }
+        .footer-text {
+            font-family: 'Orbitron', sans-serif; font-size: 0.45rem;
+            letter-spacing: 0.2em; color: var(--text-muted); text-transform: uppercase;
+        }
+        .footer-text span { color: var(--purple-bright); }
+
+        /* ANIMATIONS */
+        @keyframes slide-up { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+        @media (max-width: 640px) {
+            .main-content { padding: 1rem; }
+            .stats-row { grid-template-columns: 1fr; }
+            .input-row { flex-direction: column; }
+            .btn-generate { width: 100%; justify-content: center; }
+            .navbar { padding: 0.75rem 1rem; }
+            .nav-user span { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="bg-layer">
+    <div class="nebula nebula-1"></div>
+    <div class="nebula nebula-2"></div>
+    <div class="grid-lines"></div>
+</div>
+
+<div class="app">
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+        <div class="nav-brand">
+            <div class="nav-hex">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+            </div>
+            <span class="nav-title">NEXUS</span>
+        </div>
+        <div class="nav-right">
+            <div class="nav-user">
+                <div class="user-avatar" id="avatarInitial">?</div>
+                <span id="navUsername">Loading...</span>
+            </div>
+            <button class="btn-logout" onclick="logout()">Logout</button>
+        </div>
+    </nav>
+
+    <!-- MAIN -->
+    <main class="main-content">
+
+        <!-- Header -->
+        <div class="page-header">
+            <div class="page-title">Link Generator</div>
+            <div class="page-sub">Buat protected link — semua orang wajib login dulu sebelum bisa akses website kamu.</div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div class="stat-label">Total Link Dibuat</div>
+                <div class="stat-value" id="statTotal">0</div>
+                <div class="stat-change">↑ Semua waktu</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Link Aktif</div>
+                <div class="stat-value" id="statActive">0</div>
+                <div class="stat-change">↑ Tersimpan</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Sesi Login</div>
+                <div class="stat-value" id="statSession">—</div>
+                <div class="stat-change" id="statSessionSub">Aktif</div>
+            </div>
+        </div>
+
+        <!-- Generator -->
+        <div class="generator-card">
+            <div class="corner tl"></div><div class="corner tr"></div>
+            <div class="corner bl"></div><div class="corner br"></div>
+
+            <div class="section-title">Generate Protected Link</div>
+
+            <label class="field-label">URL Website Tujuan</label>
+            <div class="input-row">
+                <div class="input-wrap">
+                    <input type="url" id="targetUrl" class="input-field" placeholder="https://contoh.com/halaman-kamu">
+                    <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                </div>
+                <button class="btn-generate" onclick="generateLink()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                    Generate Link
+                </button>
+            </div>
+
+            <!-- Result -->
+            <div class="result-area" id="resultArea">
+                <div class="result-label">🔗 Protected Gate Link</div>
+                <div class="result-link-box">
+                    <span class="result-link-text" id="resultLink">—</span>
+                    <button class="btn-copy" id="btnCopyLink" onclick="copyLink()">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                        Copy
+                    </button>
+                </div>
+
+                <div class="result-label" style="margin-top:1rem;">📋 Embed ke HTML</div>
+                <div class="embed-snippet" id="embedSnippet">—</div>
+                <button class="btn-copy" id="btnCopyEmbed" onclick="copyEmbed()">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                    Copy Snippet HTML
+                </button>
+
+                <div class="result-hint" style="margin-top:1rem;">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9575cd" stroke-width="2" style="flex-shrink:0;margin-top:1px;"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+                    Tempel snippet HTML di atas ke dalam file HTML milikmu. Saat diklik, pengunjung akan diarahkan ke halaman login NEXUS terlebih dahulu, kemudian otomatis masuk ke URL tujuan setelah berhasil login.
+                </div>
+            </div>
+        </div>
+
+        <!-- History -->
+        <div class="history-card">
+            <div class="corner tl"></div><div class="corner tr"></div>
+            <div class="corner bl"></div><div class="corner br"></div>
+            <div class="section-title">Riwayat Link</div>
+            <div id="historyList">
+                <div class="history-empty">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 0.75rem;display:block;opacity:0.3;"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>
+                    Belum ada link yang dibuat. Generate link pertamamu di atas!
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="footer">
+        <div class="footer-text">DIBAWAH NAUNGAN <span>ALDX AUTH</span> &nbsp;|&nbsp; DIBUAT OLEH <span>ALDX</span></div>
+    </footer>
+</div>
+
+<script>
+    const swalTheme = { background: '#130d2a', color: '#f0e6ff', confirmButtonColor: '#7c3aed' };
+
+    // Auth check
+    function checkAuth() {
+        const isLoggedIn = localStorage.getItem('isLoggedIn');
+        const loginTime = localStorage.getItem('loginTime');
+        if (!isLoggedIn || isLoggedIn !== 'true') { window.location.href = 'index.html'; return; }
+        if (loginTime) {
+            const threeDays = 3 * 24 * 60 * 60 * 1000;
+            if (Date.now() - parseInt(loginTime) > threeDays) {
+                localStorage.clear(); window.location.href = 'index.html'; return;
+            }
+        }
+        const username = localStorage.getItem('username') || 'User';
+        document.getElementById('navUsername').textContent = username.toUpperCase();
+        document.getElementById('avatarInitial').textContent = username[0].toUpperCase();
+
+        // Session stat
+        const loginDate = loginTime ? new Date(parseInt(loginTime)) : null;
+        document.getElementById('statSession').textContent = loginDate ? loginDate.toLocaleDateString('id-ID', {day:'2-digit',month:'short'}) : '—';
+    }
+    checkAuth();
+
+    function logout() {
+        Swal.fire({ title: 'Logout?', text: 'Sesi kamu akan diakhiri.', icon: 'warning', showCancelButton: true, confirmButtonText: 'Ya, Logout', cancelButtonText: 'Batal', ...swalTheme })
+            .then(r => { if (r.isConfirmed) { localStorage.clear(); window.location.href = 'index.html'; } });
+    }
+
+    // Link history storage
+    function getHistory() { try { return JSON.parse(localStorage.getItem('nexus_links') || '[]'); } catch { return []; } }
+    function saveHistory(arr) { localStorage.setItem('nexus_links', JSON.stringify(arr)); }
+
+    // Generate
+    function generateLink() {
+        const rawUrl = document.getElementById('targetUrl').value.trim();
+        if (!rawUrl) {
+            Swal.fire({ icon: 'error', title: 'URL Kosong', text: 'Masukkan URL website tujuan dulu.', ...swalTheme }); return;
+        }
+        let url = rawUrl;
+        if (!url.startsWith('http://') && !url.startsWith('https://')) url = 'https://' + url;
+
+        try { new URL(url); } catch {
+            Swal.fire({ icon: 'error', title: 'URL Tidak Valid', text: 'Format URL tidak benar. Contoh: https://google.com', ...swalTheme }); return;
+        }
+
+        // Build gate URL — same origin as this page
+        const base = window.location.href.replace(/[^/]*$/, '');
+        const encoded = encodeURIComponent(url);
+        const gateLink = `${base}gate.html?to=${encoded}`;
+
+        // Embed snippet
+        const snippet = `<a href="${gateLink}" target="_blank"\n   style="display:inline-block;padding:10px 20px;background:linear-gradient(135deg,#7c3aed,#a855f7);color:white;border-radius:8px;text-decoration:none;font-family:sans-serif;font-weight:600;">\n  🔒 Masuk untuk melanjutkan ke ${new URL(url).hostname}\n</a>`;
+
+        document.getElementById('resultLink').textContent = gateLink;
+        document.getElementById('embedSnippet').textContent = snippet;
+        document.getElementById('resultArea').classList.add('show');
+
+        // Save to history
+        const history = getHistory();
+        const entry = { id: Date.now(), url, gateLink, createdAt: new Date().toISOString() };
+        history.unshift(entry);
+        saveHistory(history);
+        renderHistory();
+        updateStats();
+
+        document.getElementById('resultArea').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function copyLink() {
+        const text = document.getElementById('resultLink').textContent;
+        navigator.clipboard.writeText(text).then(() => flashCopy('btnCopyLink'));
+    }
+    function copyEmbed() {
+        const text = document.getElementById('embedSnippet').textContent;
+        navigator.clipboard.writeText(text).then(() => flashCopy('btnCopyEmbed'));
+    }
+    function flashCopy(id) {
+        const btn = document.getElementById(id);
+        btn.classList.add('copied');
+        btn.textContent = '✓ Tersalin!';
+        setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> ${id === 'btnCopyEmbed' ? 'Copy Snippet HTML' : 'Copy'}`; }, 2000);
+    }
+
+    function renderHistory() {
+        const history = getHistory();
+        const container = document.getElementById('historyList');
+        if (!history.length) {
+            container.innerHTML = `<div class="history-empty"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 0.75rem;display:block;opacity:0.3;"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>Belum ada link yang dibuat. Generate link pertamamu di atas!</div>`;
+            return;
+        }
+        container.innerHTML = history.map(item => {
+            const d = new Date(item.createdAt);
+            const dateStr = d.toLocaleDateString('id-ID', { day:'2-digit', month:'short', year:'numeric' });
+            const hostname = (() => { try { return new URL(item.url).hostname; } catch { return item.url; } })();
+            return `<div class="history-item">
+                <div class="history-dot"></div>
+                <div class="history-url">
+                    ${hostname}
+                    <span>${item.gateLink}</span>
+                </div>
+                <div class="history-actions">
+                    <button class="btn-hist" onclick="reuseLink('${item.id}')">Pakai</button>
+                    <button class="btn-hist del" onclick="deleteLink('${item.id}')">Hapus</button>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    function reuseLink(id) {
+        const item = getHistory().find(h => h.id == id);
+        if (!item) return;
+        document.getElementById('targetUrl').value = item.url;
+        document.getElementById('resultLink').textContent = item.gateLink;
+        const encoded = encodeURIComponent(item.url);
+        const base = window.location.href.replace(/[^/]*$/, '');
+        const gateLink = `${base}gate.html?to=${encoded}`;
+        const hostname = (() => { try { return new URL(item.url).hostname; } catch { return item.url; } })();
+        const snippet = `<a href="${gateLink}" target="_blank"\n   style="display:inline-block;padding:10px 20px;background:linear-gradient(135deg,#7c3aed,#a855f7);color:white;border-radius:8px;text-decoration:none;font-family:sans-serif;font-weight:600;">\n  🔒 Masuk untuk melanjutkan ke ${hostname}\n</a>`;
+        document.getElementById('embedSnippet').textContent = snippet;
+        document.getElementById('resultArea').classList.add('show');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function deleteLink(id) {
+        Swal.fire({ title: 'Hapus link ini?', icon: 'warning', showCancelButton: true, confirmButtonText: 'Hapus', cancelButtonText: 'Batal', ...swalTheme })
+            .then(r => { if (r.isConfirmed) { saveHistory(getHistory().filter(h => h.id != id)); renderHistory(); updateStats(); } });
+    }
+
+    function updateStats() {
+        const h = getHistory();
+        document.getElementById('statTotal').textContent = h.length;
+        document.getElementById('statActive').textContent = h.length;
+    }
+
+    renderHistory();
+    updateStats();
+
+    // Enter key on input
+    document.getElementById('targetUrl').addEventListener('keydown', e => { if (e.key === 'Enter') generateLink(); });
+</script>
+</body>
+</html>
